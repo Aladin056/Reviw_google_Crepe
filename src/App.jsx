@@ -1,14 +1,11 @@
 import React, { useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Gift, Star, RotateCcw, CheckCircle2 } from "lucide-react";
 
-// 👉 Remplace par ton vrai lien Google Avis
 const GOOGLE_REVIEW_URL = "https://g.page/r/CVG7bO5XPR9PEBM/review";
 
 const prizes = [
-  { label: "🥤 Boisson offerte", probability: 60 },
-  { label: "🥞 Crêpe Nutella", probability: 10 },
-  { label: "🥤 Smoothie", probability: 10 },
+  { label: "🥤 Boisson offerte", probability: 70 },
+  { label: "🥞 Crêpe Nutella", probability: 5 },
+  { label: "🥤 Smoothie", probability: 5 },
   { label: "🍫 Kinder Bueno", probability: 20 },
 ];
 
@@ -30,10 +27,15 @@ export default function App() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState(null);
+
+  const [alreadyPlayed, setAlreadyPlayed] = useState(() => {
+    return localStorage.getItem("alreadyPlayed") === "true";
+  });
+
   const playedRef = useRef(false);
 
   const colors = useMemo(
-    () => ["#fde68a", "#bfdbfe", "#fecaca", "#bbf7d0", "#ddd6fe", "#fed7aa"],
+    () => ["#fde68a", "#bfdbfe", "#fecaca", "#bbf7d0"],
     []
   );
 
@@ -43,7 +45,7 @@ export default function App() {
   };
 
   const handleSpin = () => {
-    if (playedRef.current || isSpinning) return;
+    if (alreadyPlayed || playedRef.current || isSpinning) return;
 
     const prize = pickPrize();
     const prizeIndex = prizes.findIndex((p) => p.label === prize.label);
@@ -60,16 +62,21 @@ export default function App() {
       setResult(prize);
       setIsSpinning(false);
       setStep("result");
+
+      localStorage.setItem("alreadyPlayed", "true");
+      setAlreadyPlayed(true);
     }, 4000);
   };
 
-  const resetDemo = () => {
-    playedRef.current = false;
-    setResult(null);
-    setRotation(0);
-    setStep("start");
-    setHasClickedReview(false);
-  };
+  // 🔒 Bloque accès si déjà joué
+  if (alreadyPlayed && step !== "result") {
+    return (
+      <div style={{ textAlign: "center", marginTop: 100 }}>
+        <h1>🎁 Vous avez déjà joué</h1>
+        <p>Merci pour votre participation ❤️</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", padding: 20, textAlign: "center" }}>
@@ -82,12 +89,10 @@ export default function App() {
             ⭐ Laisser un avis Google
           </button>
 
-          <br /><br />
+          <br />
+          <br />
 
-          <button
-            disabled={!hasClickedReview}
-            onClick={() => setStep("wheel")}
-          >
+          <button disabled={!hasClickedReview} onClick={() => setStep("wheel")}>
             J'ai laissé mon avis, jouer
           </button>
         </div>
@@ -126,7 +131,7 @@ export default function App() {
         <div>
           <h2>🎉 Tu as gagné :</h2>
           <h1>{result.label}</h1>
-
+          <p>Montre cet écran à la caisse.</p>
         </div>
       )}
     </div>
